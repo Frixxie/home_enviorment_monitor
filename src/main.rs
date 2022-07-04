@@ -1,4 +1,4 @@
-use actix_web::{post, web, App, HttpServer};
+use actix_web::{get, post, web, App, Either, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
@@ -7,7 +7,10 @@ use std::time::SystemTime;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "Lumberjack", about = "Tool to interact with the Hevn project")]
+#[structopt(
+    name = "home_enviorment_monitor",
+    about = "Home environment monitoring"
+)]
 struct Opt {
     #[structopt(
         short = "l",
@@ -20,7 +23,7 @@ struct Opt {
     db_url: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, sqlx::FromRow)]
 pub struct EnvData {
     pub room: String,
     pub temperature: f32,
@@ -46,6 +49,23 @@ impl fmt::Display for EnvData {
             (self.temperature as f32),
             (self.humidity as f32),
         )
+    }
+}
+
+#[get("/")]
+async fn read(pool: web::Data<PgPool>) -> Either<impl Responder, impl Responder> {
+    let rows = sqlx::query_as::<_, EnvData>(
+        "SELECT room, temperature, humidity FROM env_data ORDER BY time DESC LIMIT 1",
+    )
+    .fetch_one(&**pool)
+    .await;
+
+    match rows {
+        Ok(row) => Either::Left(web::Json(row)),
+        Err(e) => {
+            println!("{:?}", e);
+            Either::Right(HttpResponse::InternalServerError())
+        }
     }
 }
 
@@ -83,10 +103,15 @@ async fn main() -> std::io::Result<()> {
             .await
             .unwrap(),
     );
-    HttpServer::new(move || App::new().service(index).app_data(pool.clone()))
-        .bind(opt.listen_url)?
-        .run()
-        .await
-        .unwrap();
+    HttpServer::new(move || {
+        App::new()
+            .service(index)
+            .service(read)
+            .app_data(pool.clone())
+    })
+    .bind(opt.listen_url)?
+    .run()
+    .await
+    .unwrap();
     Ok(())
 }
