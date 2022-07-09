@@ -15,27 +15,27 @@ struct Opt {
     #[structopt(
         short = "l",
         long = "listen_url",
-        default_value = "192.168.0.167:65534"
+        default_value = "0.0.0.0:65534"
     )]
     listen_url: String,
 
-    #[structopt(short = "u", long = "db_url", default_value = "")]
+    #[structopt(short = "d", long = "db_url", default_value = "")]
     db_url: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, sqlx::FromRow)]
 pub struct EnvData {
     pub room: String,
-    pub temperature: f32,
-    pub humidity: f32,
+    pub temp: f32,
+    pub hum: f32,
 }
 
 impl EnvData {
-    pub fn new(room: String, temperature: f32, humidity: f32) -> Self {
+    pub fn new(room: String, temp: f32, hum: f32) -> Self {
         Self {
             room,
-            temperature,
-            humidity,
+            temp,
+            hum,
         }
     }
 }
@@ -46,8 +46,8 @@ impl fmt::Display for EnvData {
             f,
             "{},{},{}",
             self.room,
-            (self.temperature as f32),
-            (self.humidity as f32),
+            (self.temp as f32),
+            (self.hum as f32),
         )
     }
 }
@@ -55,7 +55,7 @@ impl fmt::Display for EnvData {
 #[get("/")]
 async fn read(pool: web::Data<PgPool>) -> Either<impl Responder, impl Responder> {
     let rows = sqlx::query_as::<_, EnvData>(
-        "SELECT room, temperature, humidity FROM env_data ORDER BY time DESC LIMIT 1",
+        "SELECT room, temp, hum FROM home_env ORDER BY time DESC LIMIT 1",
     )
     .fetch_one(&**pool)
     .await;
@@ -85,8 +85,8 @@ async fn index(data: web::Json<EnvData>, pool: web::Data<PgPool>) -> String {
     sqlx::query("INSERT INTO home_env (time, room, temp, hum) VALUES ($1, $2, $3, $4)")
         .bind(now as i64)
         .bind(data.room.as_str())
-        .bind(data.temperature)
-        .bind(data.humidity as i16)
+        .bind(data.temp)
+        .bind(data.hum as i16)
         .execute(&**pool)
         .await
         .unwrap();
