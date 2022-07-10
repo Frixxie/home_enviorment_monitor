@@ -9,7 +9,7 @@
 
 const char* ssid = SSID;
 const char* password = PASSWORD;
-const char* hostname = "192.168.0.166";
+const char* hostname = "192.168.0.113";
 const uint  port = 65534;
 const char* method = "POST";
 const char* path = "/";
@@ -57,24 +57,28 @@ void loop() {
     while (isnan(temp) || isnan(humi)) {
         temp = dht.readTemperature();
         humi = dht.readHumidity();
-        delay(1000);
+        delay(500);
     }
     blink_led(LED_BUILTIN, 1000);
-    if (client.connect(hostname, port)) {
-        String payload = "{\"room\": \"mobile\", \"temperature\": " + String(temp) + ", \"humidity\": " + String(humi) + "}";
-        client.println(String(method) + " " + String(path) + " HTTP/1.1");
-        client.println("Content-Type: application/json");
-        client.println("Content-Length: " + String(payload.length()));
-        client.println("Host: " + String(hostname));
-        client.println("Connection: close");
-        client.println("");
+    while (!client.connected()) {
+        blink_led(LED_BUILTIN, 100);
+        blink_led(LED_BUILTIN, 100);
+        blink_led(LED_BUILTIN, 100);
+        client.connect(hostname, port);
+    }
+    String payload = "{\"room\": \"mobile\", \"temp\": " + String(temp) + ", \"hum\": " + String(humi) + "}";
+    client.println(String(method) + " " + String(path) + " HTTP/1.1");
+    client.println("Content-Type: application/json");
+    client.println("Content-Length: " + String(payload.length()));
+    client.println("Host: " + String(hostname));
+    client.println("Connection: close");
+    client.println("");
 
-        client.println(payload);
-        client.println("");
+    client.println(payload);
+    client.println("");
 
-        if (!client.connected()) {
-            client.stop();
-        }
+    if (client.connected()) {
+        client.stop();
     }
     delay(60000);
 }

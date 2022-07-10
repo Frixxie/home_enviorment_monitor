@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: home_enviorment_monitor
+  name: home-enviorment-monitor
   labels:
-    app: home_enviorment_monitor 
+    app: home-enviorment-monitor 
 spec:
   replicas: 8
   selector:
     matchLabels:
-      app: home_enviorment_monitor 
+      app: home-enviorment-monitor 
   template:
     metadata:
       labels:
-        app: home_enviorment_monitor
+        app: home-enviorment-monitor
     spec:
       containers:
-      - name: home_enviorment_monitor
+      - name: home-enviorment-monitor
         image: frixxie/home_enviorment_monitor:pi_latest
         imagePullPolicy: Always
         ports:

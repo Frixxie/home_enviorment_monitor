@@ -12,11 +12,7 @@ use structopt::StructOpt;
     about = "Home environment monitoring"
 )]
 struct Opt {
-    #[structopt(
-        short = "l",
-        long = "listen_url",
-        default_value = "0.0.0.0:65534"
-    )]
+    #[structopt(short = "l", long = "listen_url", default_value = "0.0.0.0:65534")]
     listen_url: String,
 
     #[structopt(short = "d", long = "db_url", default_value = "")]
@@ -32,11 +28,7 @@ pub struct EnvData {
 
 impl EnvData {
     pub fn new(room: String, temp: f32, hum: f32) -> Self {
-        Self {
-            room,
-            temp,
-            hum,
-        }
+        Self { room, temp, hum }
     }
 }
 
@@ -54,6 +46,7 @@ impl fmt::Display for EnvData {
 
 #[get("/")]
 async fn read(pool: web::Data<PgPool>) -> Either<impl Responder, impl Responder> {
+    println!("Got request!");
     let rows = sqlx::query_as::<_, EnvData>(
         "SELECT room, temp, hum FROM home_env ORDER BY time DESC LIMIT 1",
     )
@@ -71,17 +64,16 @@ async fn read(pool: web::Data<PgPool>) -> Either<impl Responder, impl Responder>
 
 #[post("/")]
 async fn index(data: web::Json<EnvData>, pool: web::Data<PgPool>) -> String {
-    println!("{}", data);
-
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs();
+    println!("{},{}", now, data);
+
     sqlx::query("CREATE TABLE IF NOT EXISTS home_env (time INT, room TEXT, temp REAL, hum REAL)")
         .execute(&**pool)
         .await
         .unwrap();
-
     sqlx::query("INSERT INTO home_env (time, room, temp, hum) VALUES ($1, $2, $3, $4)")
         .bind(now as i64)
         .bind(data.room.as_str())
