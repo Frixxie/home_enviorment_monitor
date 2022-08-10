@@ -1,10 +1,10 @@
+mod env_data;
 use actix_web::{get, post, web, App, Either, HttpResponse, HttpServer, Responder};
-use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
-use std::fmt;
 use std::time::SystemTime;
 use structopt::StructOpt;
+use env_data::EnvData;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -17,31 +17,6 @@ struct Opt {
 
     #[structopt(short = "d", long = "db_url", default_value = "")]
     db_url: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, sqlx::FromRow)]
-pub struct EnvData {
-    pub room: String,
-    pub temp: f32,
-    pub hum: f32,
-}
-
-impl EnvData {
-    pub fn new(room: String, temp: f32, hum: f32) -> Self {
-        Self { room, temp, hum }
-    }
-}
-
-impl fmt::Display for EnvData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{},{},{}",
-            self.room,
-            (self.temp as f32),
-            (self.hum as f32),
-        )
-    }
 }
 
 #[get("/")]
