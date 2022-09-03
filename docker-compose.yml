@@ -1,0 +1,6 @@
+version: "3.9"
+services:
+  application_runtime:
+    build: .
+    ports:
+      - "65534:65534"
