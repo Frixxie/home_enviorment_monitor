@@ -1,7 +1,7 @@
 use actix_web::{
     get, post,
     web::{self, Data, Json},
-    Responder,
+    Responder, error::ErrorInternalServerError,
 };
 use futures::TryStreamExt;
 use mongodb::Collection;
@@ -20,10 +20,10 @@ async fn read(
                 Ok(entries) => Ok(Json(
                     entries.into_iter().max_by_key(|e| e.timestamp).unwrap(),
                 )),
-                Err(e) => Err(actix_web::error::ErrorInternalServerError(e)),
+                Err(e) => Err(ErrorInternalServerError(e)),
             }
         }
-        Err(e) => Err(actix_web::error::ErrorInternalServerError(e)),
+        Err(e) => Err(ErrorInternalServerError(e)),
     }
 }
 
@@ -36,6 +36,6 @@ async fn store_data(
     let result = collection.insert_one(data_entry, None).await;
     match result {
         Ok(_) => Ok("OK".to_string()),
-        Err(e) => Err(actix_web::error::ErrorInternalServerError(e)),
+        Err(e) => Err(ErrorInternalServerError(e)),
     }
 }

@@ -12,8 +12,11 @@ use structopt::StructOpt;
     about = "Home environment monitoring"
 )]
 struct Opt {
-    #[structopt(short = "l", long = "listen_url", default_value = "0.0.0.0:65534")]
-    listen_url: String,
+    #[structopt(short = "h", long = "host", default_value = "0.0.0.0:65534")]
+    host: String,
+
+    #[structopt(default_value = "65534")]
+    port: u16,
 
     #[structopt(
         short = "d",
@@ -40,7 +43,7 @@ async fn main() -> std::io::Result<()> {
             .service(read)
             .app_data(Data::new(collection.clone()))
     })
-    .bind(opt.listen_url)?
+    .bind(format!("{}:{}", opt.host, opt.port))?
     .run()
     .await
     .unwrap();

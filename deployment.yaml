@@ -3,12 +3,12 @@ kind: Deployment
 metadata:
   name: home-enviorment-monitor
   labels:
-    app: home-enviorment-monitor 
+    app: home-enviorment-monitor
 spec:
   replicas: 4
   selector:
     matchLabels:
-      app: home-enviorment-monitor 
+      app: home-enviorment-monitor
   template:
     metadata:
       labels:

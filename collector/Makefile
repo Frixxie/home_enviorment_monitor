@@ -9,4 +9,3 @@ compile: $(SRC)
 
 upload: compile
 	arduino-cli upload -b esp32:esp32:nodemcu-32s --port /dev/ttyUSB0
-
