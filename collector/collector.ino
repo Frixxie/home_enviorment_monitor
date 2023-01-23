@@ -2,6 +2,7 @@
 #include <DHT.h>
 #include <DHT_U.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include "credentials.h"
 
 #define DHTPIN 22
@@ -9,76 +10,47 @@
 
 const char* ssid = SSID;
 const char* password = PASSWORD;
-const char* hostname = "192.168.0.137";
-const uint  port = 65534;
-const char* method = "POST";
-const char* path = "/";
+const char* url = URL;
+const char* room = "room";
 
-
-char digits[16];
 DHT dht(DHTPIN, DHTTYPE);
 WiFiClient client;
-
+HTTPClient http;
 
 void setup() {
-    pinMode(LED_BUILTIN, OUTPUT);
-    dht.begin();
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        blink_led(LED_BUILTIN, 2000);
-    }
+  pinMode(LED_BUILTIN, OUTPUT);
+  dht.begin();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    blink_led(LED_BUILTIN, 2000);
+  }
+  http.begin(url);
+  Serial.begin(115200);
 }
 
 void blink_led(int pin, int delay_ms) {
-    digitalWrite(pin, HIGH);
-    delay(delay_ms);
-    digitalWrite(pin, LOW);
-    delay(delay_ms);
-}
-
-void led_print(int led_gpio, int output) {
-    int count = 0;
-    while (output > 0) {
-        digits[count] = output % 10;
-        output /= 10;
-        count++;
-    }
-    for (int i = count - 1; i >= 0; i--) {
-        for (int j = 0; j < digits[i]; j++) {
-            blink_led(led_gpio, 500);
-        }
-        delay(500);
-    }
+  digitalWrite(pin, HIGH);
+  delay(delay_ms);
+  digitalWrite(pin, LOW);
+  delay(delay_ms);
 }
 
 void loop() {
-    float temp = dht.readTemperature();
-    float humi = dht.readHumidity();
-    while (isnan(temp) || isnan(humi)) {
-        temp = dht.readTemperature();
-        humi = dht.readHumidity();
-        delay(500);
-    }
-    blink_led(LED_BUILTIN, 1000);
-    while (!client.connected()) {
-        blink_led(LED_BUILTIN, 100);
-        blink_led(LED_BUILTIN, 100);
-        blink_led(LED_BUILTIN, 100);
-        client.connect(hostname, port);
-    }
-    String payload = "{\"room\": \"mobile\", \"temp\": " + String(temp) + ", \"hum\": " + String(humi) + "}";
-    client.println(String(method) + " " + String(path) + " HTTP/1.1");
-    client.println("Content-Type: application/json");
-    client.println("Content-Length: " + String(payload.length()));
-    client.println("Host: " + String(hostname));
-    client.println("Connection: close");
-    client.println("");
+  Serial.println("Reading sensor...");
+  float temp = dht.readTemperature();
+  float humi = dht.readHumidity();
+  while (isnan(temp) || isnan(humi)) {
+    temp = dht.readTemperature();
+    humi = dht.readHumidity();
+    delay(500);
+  }
+  blink_led(LED_BUILTIN, 1000);
 
-    client.println(payload);
-    client.println("");
+  String payload = "{\"room\": \"mobile\", \"temp\": " + String(temp) + ", \"hum\": " + String(humi) + "}";
+  http.addHeader("Content-Type", "application/json");
+  Serial.println("Sending data...");
+  int res = http.POST(payload);
 
-    if (client.connected()) {
-        client.stop();
-    }
-    delay(60000);
+  Serial.println("Response code: " + String(res));
+  delay(3000);
 }
