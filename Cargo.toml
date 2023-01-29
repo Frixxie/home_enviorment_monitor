@@ -14,3 +14,4 @@ structopt = { version = "0.3", default-features = false }
 actix-web = "4.2.1"
 mongodb = "2.3.1"
 futures = "0.3.25"
+actix-cors = "0.6.4"

@@ -24,7 +24,6 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     blink_led(LED_BUILTIN, 2000);
   }
-  http.begin(url);
   Serial.begin(115200);
 }
 
@@ -46,11 +45,12 @@ void loop() {
   }
   blink_led(LED_BUILTIN, 1000);
 
+  http.begin(url);
   String payload = "{\"room\": \"mobile\", \"temp\": " + String(temp) + ", \"hum\": " + String(humi) + "}";
   http.addHeader("Content-Type", "application/json");
-  Serial.println("Sending data...");
   int res = http.POST(payload);
+  http.end();
 
   Serial.println("Response code: " + String(res));
-  delay(3000);
+  delay(60000);
 }

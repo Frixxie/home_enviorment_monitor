@@ -12,7 +12,7 @@ use structopt::StructOpt;
     about = "Home environment monitoring"
 )]
 struct Opt {
-    #[structopt(short = "h", long = "host", default_value = "0.0.0.0:65534")]
+    #[structopt(default_value = "0.0.0.0")]
     host: String,
 
     #[structopt(default_value = "65534")]
@@ -38,9 +38,11 @@ async fn main() -> std::io::Result<()> {
 
     //configure and start the server
     HttpServer::new(move || {
+        let cors = actix_cors::Cors::permissive();
         App::new()
             .service(store_data)
             .service(read)
+            .wrap(cors)
             .app_data(Data::new(collection.clone()))
     })
     .bind(format!("{}:{}", opt.host, opt.port))?
